@@ -1,0 +1,58 @@
+"""Eastbridge Academy chess bot project — student kit."""
+
+from chessdk.types import (
+    BLACK,
+    BISHOP,
+    Color,
+    Kind,
+    KING,
+    KNIGHT,
+    Move,
+    PAWN,
+    Piece,
+    QUEEN,
+    ROOK,
+    WHITE,
+)
+from chessdk.squares import (
+    BISHOP_DIRECTIONS,
+    KING_OFFSETS,
+    KNIGHT_OFFSETS,
+    ROOK_DIRECTIONS,
+    QUEEN_DIRECTIONS,
+    file_of,
+    on_board,
+    parse_square,
+    rank_of,
+    sq,
+    square_name,
+)
+from chessdk.fen import STARTING_FEN, parse_fen
+
+__all__ = [
+    "BISHOP",
+    "BISHOP_DIRECTIONS",
+    "BLACK",
+    "Color",
+    "KING",
+    "KING_OFFSETS",
+    "KNIGHT",
+    "KNIGHT_OFFSETS",
+    "Kind",
+    "Move",
+    "PAWN",
+    "Piece",
+    "QUEEN",
+    "QUEEN_DIRECTIONS",
+    "ROOK",
+    "ROOK_DIRECTIONS",
+    "STARTING_FEN",
+    "WHITE",
+    "file_of",
+    "on_board",
+    "parse_fen",
+    "parse_square",
+    "rank_of",
+    "sq",
+    "square_name",
+]
