@@ -47,44 +47,44 @@ class Board(BaseBoard):
 
     def piece_at(self, square: int) -> Piece | None:
         """Return the Piece on the given square, or None if empty."""
-        raise NotImplementedError("Stage 1, Step 2")
+        raise NotImplementedError("implement Stage 1 (Squares and Pieces)")
 
     def pieces_of(self, color: Color) -> Iterator[tuple[int, Piece]]:
         """Yield (square, piece) pairs for every piece of the given color."""
-        raise NotImplementedError("Stage 1, Step 2")
+        raise NotImplementedError("implement Stage 1 (Squares and Pieces)")
 
     # === Stage 2: Leapers ===
 
     def _knight_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal knight moves for `color`."""
-        raise NotImplementedError("Stage 2, Step 1")
+        raise NotImplementedError("implement Stage 2 (knight)")
 
     def _king_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal king moves for `color`. (No castling yet.)"""
-        raise NotImplementedError("Stage 2, Step 2")
+        raise NotImplementedError("implement Stage 2 (king)")
 
     # === Stage 3: Sliders ===
 
     def _bishop_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal bishop moves for `color`."""
-        raise NotImplementedError("Stage 3, Step 1")
+        raise NotImplementedError("implement Stage 3 (bishop)")
 
     def _rook_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal rook moves for `color`."""
-        raise NotImplementedError("Stage 3, Step 2")
+        raise NotImplementedError("implement Stage 3 (rook)")
 
     def _queen_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal queen moves for `color`."""
-        raise NotImplementedError("Stage 3, Step 3")
+        raise NotImplementedError("implement Stage 3 (queen)")
 
     # === Stage 4: Pawns ===
 
     def _pawn_moves(self, color: Color) -> list[Move]:
         """Pseudo-legal pawn moves for `color`. (No en passant or promotion yet.)"""
-        raise NotImplementedError("Stage 4")
+        raise NotImplementedError("implement Stage 4 (pawn)")
 
     # === Wiring ===
 
     def pseudo_legal_moves(self) -> list[Move]:
         """All pseudo-legal moves for the side to move."""
-        raise NotImplementedError("Stage 4, Step 4")
+        raise NotImplementedError("implement Stage 4 (combine all piece moves)")
