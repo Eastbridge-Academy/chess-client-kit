@@ -76,11 +76,10 @@ def test_black_en_passant():
     """Black en passant capture, mirror of the white case."""
     # White just played d2-d4; en passant target d3.
     b = Board.from_fen("4k3/8/8/8/3Pp3/8/8/4K3 b - d3 0 1")
-    legal = uci_set(b.legal_moves())
-    assert "e4d3" in legal
-    move = next(m for m in legal if m == "e4d3")
-    move_obj = next(m for m in b.legal_moves() if m.uci() == "e4d3")
-    b.make_move(move_obj)
+    legal = b.legal_moves()
+    assert "e4d3" in {m.uci() for m in legal}
+    move = next(m for m in legal if m.uci() == "e4d3")
+    b.make_move(move)
     assert b.pieces[parse_square("d4")] is None  # captured pawn gone
     assert b.pieces[parse_square("d3")] is not None  # black pawn here
     assert b.pieces[parse_square("e4")] is None

@@ -5,7 +5,7 @@ Student client kit for the Eastbridge Academy chess-bot project. Provides the `c
 Students install it with:
 
 ```bash
-uv tool install git+https://github.com/Eastbridge-Academy/chess-client-kit@v0.1.0
+uv tool install git+https://github.com/Eastbridge-Academy/chess-client-kit@v0.2.0
 ```
 
 and then, in their own working directory:
@@ -13,7 +13,8 @@ and then, in their own working directory:
 ```bash
 chess-cli init              # drop scaffold files: board.py, bot.py, tests/
 chess-cli test              # run the week's pytest suite
-chess-cli perft 1           # count legal moves from the starting position
+chess-cli perft 3           # count legal moves at depth 3
+chess-cli perft 3 --divide  # compare per-root-move counts against the reference
 ```
 
 ## Contents
