@@ -1,4 +1,4 @@
-"""Stage 8: en passant (Week 2 Stage 4)."""
+"""Stage 8: en passant."""
 
 from __future__ import annotations
 

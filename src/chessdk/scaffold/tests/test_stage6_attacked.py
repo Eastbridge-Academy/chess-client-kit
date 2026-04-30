@@ -1,4 +1,4 @@
-"""Stage 6 attack-detection tests (Week 2 Stage 2, is_attacked)."""
+"""Stage 6: attack-detection tests (is_attacked)."""
 
 from __future__ import annotations
 

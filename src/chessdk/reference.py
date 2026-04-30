@@ -129,7 +129,7 @@ class Board(BaseBoard):
                     nr += dr
         return moves
 
-    # === Stage 4: Pawns (with promotion and en passant) ===
+    # === Stage 4: Pawns (with Stage 8 promotion and en passant) ===
 
     def _pawn_moves(self, color: Color) -> list[Move]:
         moves: list[Move] = []
@@ -173,7 +173,7 @@ class Board(BaseBoard):
                     moves.append(Move(from_sq, target_sq))
         return moves
 
-    # === Castling generation ===
+    # === Castling generation (Stage 7) ===
 
     def _castling_moves(self, color: Color) -> list[Move]:
         moves: list[Move] = []

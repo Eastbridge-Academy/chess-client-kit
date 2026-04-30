@@ -1,4 +1,4 @@
-"""Stage 5 (Week 2 Stage 1): make_move and undo_move round-trip.
+"""Stage 5: make_move and undo_move round-trip.
 
 For each FEN below, every pseudo-legal move is made and then undone; the
 board must return to exactly its starting FEN. This is the gateway test

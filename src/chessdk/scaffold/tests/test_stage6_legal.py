@@ -1,4 +1,4 @@
-"""Stage 6 legal_moves tests (Week 2 Stage 2)."""
+"""Stage 6: legal_moves tests."""
 
 from __future__ import annotations
 

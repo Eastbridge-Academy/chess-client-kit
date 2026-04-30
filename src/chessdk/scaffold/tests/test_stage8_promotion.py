@@ -1,4 +1,4 @@
-"""Stage 8: pawn promotion (Week 2 Stage 4)."""
+"""Stage 8: pawn promotion."""
 
 from __future__ import annotations
 

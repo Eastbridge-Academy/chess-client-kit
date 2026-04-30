@@ -1,4 +1,4 @@
-"""Stage 7: castling generation and make/undo (Week 2 Stage 3)."""
+"""Stage 7: castling generation and make/undo."""
 
 from __future__ import annotations
 
