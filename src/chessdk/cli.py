@@ -106,17 +106,30 @@ def test(pytest_args: tuple[str, ...]) -> None:
 # -----------------------------------------------------------------------------
 
 def _perft(board, depth: int) -> int:
+    """Count leaves in the legal-move tree at depth `depth`.
+
+    Uses the student's `legal_moves`/`make_move`/`undo_move` (Week 2+).
+    """
     if depth == 0:
         return 1
-    moves = board.pseudo_legal_moves()
-    if depth == 1:
-        return len(moves)
-    # Week 1 only has pseudo_legal_moves; perft > 1 requires make_move (Week 2+).
-    # For now, only depth 1 is supported.
-    raise click.ClickException(
-        "perft at depth > 1 requires make_move / undo_move (Week 2+). "
-        "Only depth 1 works in Week 1."
-    )
+    total = 0
+    for move in board.legal_moves():
+        board.make_move(move)
+        total += _perft(board, depth - 1)
+        board.undo_move()
+    return total
+
+
+def _perft_divide(board, depth: int) -> dict[str, int]:
+    """For each root legal move, return its subtree perft(depth - 1) count."""
+    counts: dict[str, int] = {}
+    if depth <= 0:
+        return counts
+    for move in board.legal_moves():
+        board.make_move(move)
+        counts[move.uci()] = _perft(board, depth - 1)
+        board.undo_move()
+    return counts
 
 
 @main.command()
@@ -124,8 +137,7 @@ def _perft(board, depth: int) -> int:
 @click.option("--fen", default=None, help="FEN string (defaults to the starting position).")
 @click.option("--divide", is_flag=True, help="Print per-root-move counts and compare against the reference.")
 def perft(depth: int, fen: str | None, divide: bool) -> None:
-    """Count pseudo-legal moves from a position at the given depth."""
-    # Import student's Board from cwd
+    """Count legal moves from a position at the given depth."""
     cwd = Path.cwd().resolve()
     if str(cwd) not in sys.path:
         sys.path.insert(0, str(cwd))
@@ -142,31 +154,38 @@ def perft(depth: int, fen: str | None, divide: bool) -> None:
 
         ref_board = RefBoard.from_fen(fen)
         try:
-            student_moves = student_board.pseudo_legal_moves()
+            student_counts = _perft_divide(student_board, depth)
         except NotImplementedError as e:
             raise click.ClickException(f"board.py raised NotImplementedError: {e}")
+        ref_counts = _perft_divide(ref_board, depth)
 
-        student_ucis = sorted(m.uci() for m in student_moves)
-        ref_ucis = sorted(m.uci() for m in ref_board.pseudo_legal_moves())
+        student_total = sum(student_counts.values())
+        ref_total = sum(ref_counts.values())
+        all_moves = sorted(set(student_counts) | set(ref_counts))
 
-        student_set = set(student_ucis)
-        ref_set = set(ref_ucis)
-        missing = ref_set - student_set
-        extra = student_set - ref_set
-
-        click.echo(f"Your count:      {len(student_ucis)}")
-        click.echo(f"Reference count: {len(ref_ucis)}")
-        if missing:
-            click.echo(click.style(f"Missing moves ({len(missing)}):", fg="red"))
-            for u in sorted(missing):
-                click.echo(f"  - {u}")
-        if extra:
-            click.echo(click.style(f"Extra moves ({len(extra)}):", fg="yellow"))
-            for u in sorted(extra):
-                click.echo(f"  + {u}")
-        if not missing and not extra:
-            click.echo(click.style("Match!", fg="green"))
-        sys.exit(0 if not missing and not extra else 1)
+        any_diff = False
+        click.echo(f"{'move':<8} {'you':>10} {'ref':>10}  status")
+        for u in all_moves:
+            you = student_counts.get(u, 0)
+            ref = ref_counts.get(u, 0)
+            if u in student_counts and u in ref_counts and you == ref:
+                status = click.style("ok", fg="green")
+            elif u not in student_counts:
+                status = click.style("missing", fg="red")
+                any_diff = True
+            elif u not in ref_counts:
+                status = click.style("extra", fg="yellow")
+                any_diff = True
+            else:
+                status = click.style(f"diff {you - ref:+d}", fg="red")
+                any_diff = True
+            click.echo(f"{u:<8} {you:>10} {ref:>10}  {status}")
+        click.echo(f"{'TOTAL':<8} {student_total:>10} {ref_total:>10}")
+        if any_diff or student_total != ref_total:
+            click.echo(click.style("MISMATCH", fg="red"))
+            sys.exit(1)
+        click.echo(click.style("Match!", fg="green"))
+        sys.exit(0)
 
     try:
         count = _perft(student_board, depth)

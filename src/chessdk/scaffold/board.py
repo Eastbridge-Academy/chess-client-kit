@@ -25,6 +25,7 @@ from chessdk import (
     KNIGHT_OFFSETS,
     Kind,
     Move,
+    MoveRecord,
     PAWN,
     Piece,
     QUEEN,
@@ -34,14 +35,20 @@ from chessdk import (
     WHITE,
     file_of,
     on_board,
+    opposite,
     rank_of,
     sq,
 )
 from chessdk.base import BaseBoard
+from chessdk.fen import BoardState
 
 
 class Board(BaseBoard):
     """A chess board with move generation. You implement the methods below."""
+
+    def __init__(self, state: BoardState | None = None):
+        super().__init__(state)
+        self._history: list[MoveRecord] = []
 
     # === Stage 1: Squares and Pieces ===
 
@@ -60,8 +67,12 @@ class Board(BaseBoard):
         raise NotImplementedError("implement Stage 2 (knight)")
 
     def _king_moves(self, color: Color) -> list[Move]:
-        """Pseudo-legal king moves for `color`. (No castling yet.)"""
-        raise NotImplementedError("implement Stage 2 (king)")
+        """Pseudo-legal king moves for `color`.
+
+        Includes castling once Week 2 Stage 3 is in (kingside and queenside,
+        with all four conditions checked).
+        """
+        raise NotImplementedError("implement Stage 2 (king); extend in Week 2 Stage 3")
 
     # === Stage 3: Sliders ===
 
@@ -80,11 +91,44 @@ class Board(BaseBoard):
     # === Stage 4: Pawns ===
 
     def _pawn_moves(self, color: Color) -> list[Move]:
-        """Pseudo-legal pawn moves for `color`. (No en passant or promotion yet.)"""
-        raise NotImplementedError("implement Stage 4 (pawn)")
+        """Pseudo-legal pawn moves for `color`.
+
+        Week 1: single push, double push, diagonal captures.
+        Week 2 Stage 4: also generate promotion moves (one Move per promotion
+        kind) and en passant captures.
+        """
+        raise NotImplementedError("implement Stage 4 (pawn); extend in Week 2 Stage 4")
 
     # === Wiring ===
 
     def pseudo_legal_moves(self) -> list[Move]:
         """All pseudo-legal moves for the side to move."""
         raise NotImplementedError("implement Stage 4 (combine all piece moves)")
+
+    # === Week 2 Stage 1: Make and Unmake ===
+
+    def make_move(self, move: Move) -> None:
+        """Apply `move` in place. Push a MoveRecord onto self._history.
+
+        Handles quiet moves and ordinary captures in Stage 1; extended for
+        castling (Stage 3), promotion and en passant (Stage 4).
+        """
+        raise NotImplementedError("implement Week 2 Stage 1 (Make and Unmake)")
+
+    def undo_move(self) -> None:
+        """Reverse the last make_move call by popping self._history."""
+        raise NotImplementedError("implement Week 2 Stage 1 (Make and Unmake)")
+
+    # === Week 2 Stage 2: Attacks and Legality ===
+
+    def is_attacked(self, square: int, by_color: Color) -> bool:
+        """True if any piece of `by_color` attacks `square`."""
+        raise NotImplementedError("implement Week 2 Stage 2 (Attacks and Legality)")
+
+    def is_in_check(self, color: Color | None = None) -> bool:
+        """True if `color` (default: side to move) is in check."""
+        raise NotImplementedError("implement Week 2 Stage 2 (Attacks and Legality)")
+
+    def legal_moves(self) -> list[Move]:
+        """Pseudo-legal moves filtered to those that don't leave own king in check."""
+        raise NotImplementedError("implement Week 2 Stage 2 (Attacks and Legality)")

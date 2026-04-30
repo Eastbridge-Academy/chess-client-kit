@@ -19,29 +19,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from chessdk.squares import parse_square, sq, square_name
-from chessdk.types import BLACK, Color, Piece, WHITE
+from chessdk.types import BLACK, CastlingRights, Color, Piece, WHITE
 
 STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-
-
-@dataclass
-class CastlingRights:
-    white_kingside: bool = False
-    white_queenside: bool = False
-    black_kingside: bool = False
-    black_queenside: bool = False
-
-    def __str__(self) -> str:
-        s = ""
-        if self.white_kingside:
-            s += "K"
-        if self.white_queenside:
-            s += "Q"
-        if self.black_kingside:
-            s += "k"
-        if self.black_queenside:
-            s += "q"
-        return s or "-"
 
 
 @dataclass

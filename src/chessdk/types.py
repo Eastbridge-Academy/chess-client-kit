@@ -75,20 +75,47 @@ class Piece:
         return f"Piece({self.char})"
 
 
+@dataclass
+class CastlingRights:
+    white_kingside: bool = False
+    white_queenside: bool = False
+    black_kingside: bool = False
+    black_queenside: bool = False
+
+    def __str__(self) -> str:
+        s = ""
+        if self.white_kingside:
+            s += "K"
+        if self.white_queenside:
+            s += "Q"
+        if self.black_kingside:
+            s += "k"
+        if self.black_queenside:
+            s += "q"
+        return s or "-"
+
+    def copy(self) -> "CastlingRights":
+        return CastlingRights(
+            self.white_kingside,
+            self.white_queenside,
+            self.black_kingside,
+            self.black_queenside,
+        )
+
+
 @dataclass(frozen=True)
 class Move:
     """A chess move.
 
     `from_sq` and `to_sq` are square indices 0..63. `promotion` is the piece
     kind to promote to (one of KNIGHT, BISHOP, ROOK, QUEEN), or None for a
-    non-promotion move. `is_en_passant` and `is_castle` are not used in Week 1.
+    non-promotion move. Castling and en passant are not flagged on the Move;
+    they are inferred from the move's shape and the board state by make_move.
     """
 
     from_sq: int
     to_sq: int
     promotion: Kind | None = None
-    is_en_passant: bool = False
-    is_castle: bool = False
 
     def uci(self) -> str:
         """Return the UCI string representation, e.g. 'e2e4' or 'e7e8q'."""
@@ -101,3 +128,26 @@ class Move:
 
     def __repr__(self) -> str:
         return f"Move({self.uci()})"
+
+
+def opposite(color: Color) -> Color:
+    """Return the other color."""
+    return BLACK if color == WHITE else WHITE
+
+
+@dataclass
+class MoveRecord:
+    """Information needed to undo a move.
+
+    `make_move` constructs one of these from the pre-move state and pushes it
+    onto Board._history; `undo_move` pops it and uses the fields to revert.
+    Students don't pass MoveRecord through the public API; it lives entirely
+    inside the Board.
+    """
+
+    move: Move
+    captured: Piece | None          # piece that vanished, if any
+    captured_square: int            # where it sat (= move.to_sq except en passant)
+    prev_castling: CastlingRights
+    prev_en_passant: int | None
+    prev_halfmove: int
