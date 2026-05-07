@@ -1,6 +1,6 @@
 [project]
 name = "chess-client-kit"
-version = "0.2.1"
+version = "0.3.0"
 description = "Student client kit for the Eastbridge Academy chess bot project"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 chess-cli = "chessdk.cli:main"
+chess-bot-uci = "chessdk.uci:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -5,16 +5,19 @@ Student client kit for the Eastbridge Academy chess-bot project. Provides the `c
 Students install it with:
 
 ```bash
-uv tool install git+https://github.com/Eastbridge-Academy/chess-client-kit@v0.2.0
+uv tool install git+https://github.com/Eastbridge-Academy/chess-client-kit@v0.3.0
 ```
 
 and then, in their own working directory:
 
 ```bash
-chess-cli init              # drop scaffold files: board.py, bot.py, tests/
-chess-cli test              # run the week's pytest suite
-chess-cli perft 3           # count legal moves at depth 3
-chess-cli perft 3 --divide  # compare per-root-move counts against the reference
+chess-cli init                       # drop scaffold files: board.py, bot.py, tests/
+chess-cli test                       # run the week's pytest suite
+chess-cli perft 3                    # count legal moves at depth 3
+chess-cli perft 3 --divide           # compare per-root-move counts against the reference
+chess-cli play --vs random_legal     # play one game against a built-in opponent
+chess-cli submit "Team Name"         # upload bot to the tournament server
+chess-bot-uci                        # speak UCI on stdin/stdout (for cutechess, etc.)
 ```
 
 ## Contents

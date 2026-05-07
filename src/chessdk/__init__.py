@@ -31,6 +31,7 @@ from chessdk.squares import (
     square_name,
 )
 from chessdk.fen import STARTING_FEN, parse_fen
+from chessdk.evaluation import PIECE_VALUE, min_attacker_value
 
 __all__ = [
     "BISHOP",
@@ -46,6 +47,7 @@ __all__ = [
     "Move",
     "MoveRecord",
     "PAWN",
+    "PIECE_VALUE",
     "Piece",
     "QUEEN",
     "QUEEN_DIRECTIONS",
@@ -54,6 +56,7 @@ __all__ = [
     "STARTING_FEN",
     "WHITE",
     "file_of",
+    "min_attacker_value",
     "on_board",
     "opposite",
     "parse_fen",
