@@ -323,7 +323,7 @@ def _play_one_game(board_cls, white_fn, black_fn, time_ms: int, max_plies: int):
 )
 @click.option(
     "--max-plies",
-    default=300,
+    default=500,
     show_default=True,
     type=int,
     help="Cap each game at this many plies; if reached, the game is declared a draw.",
