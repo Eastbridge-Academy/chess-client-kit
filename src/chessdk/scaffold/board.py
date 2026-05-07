@@ -2,7 +2,7 @@
 
 This file lives in your own working directory after `chess-cli init`. Edit it
 freely. Tests (`chess-cli test`) import `Board` from this file; the UCI
-wrapper in later weeks will import your `choose_move` from `bot.py`, which
+wrapper in later phases will import your `choose_move` from `bot.py`, which
 will in turn use this `Board`.
 
 Square layout: indices 0..63, with 0 = a1 and 63 = h8. See

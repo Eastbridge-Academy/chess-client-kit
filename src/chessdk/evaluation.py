@@ -1,8 +1,8 @@
 """Tiny shared helpers for bot evaluation.
 
-The kit ships these so that students writing simple bots in Week 3 can talk
+The kit ships these so that students writing simple bots in Phase 3 can talk
 about ``hanging pieces'' and ``which captures are good'' without first
-implementing a per-piece-kind attack enumerator. Stronger weeks will replace
+implementing a per-piece-kind attack enumerator. Stronger phases will replace
 or extend these.
 """
 

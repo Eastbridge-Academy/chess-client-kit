@@ -107,7 +107,7 @@ def test(pytest_args: tuple[str, ...]) -> None:
 def _perft(board, depth: int) -> int:
     """Count leaves in the legal-move tree at depth `depth`.
 
-    Uses the student's `legal_moves`/`make_move`/`undo_move` (Week 2+).
+    Uses the student's `legal_moves`/`make_move`/`undo_move` (Phase 2+).
     """
     if depth == 0:
         return 1

@@ -2,7 +2,7 @@
 
 For each FEN below, every pseudo-legal move is made and then undone; the
 board must return to exactly its starting FEN. This is the gateway test
-for the rest of Week 2: nothing further will work without it.
+for the rest of Phase 2: nothing further will work without it.
 """
 
 from __future__ import annotations
