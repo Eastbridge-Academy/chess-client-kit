@@ -472,7 +472,8 @@ def submit(team_name: str, email: str | None, bot_file: str, board_file: str) ->
         "board_py": board_path.read_text(),
     }
 
-    url = api_url.rstrip("/") + "/chess/submit"
+    league = cfg.get("league", "chess")
+    url = api_url.rstrip("/") + f"/api/v1/leagues/{league}/bots/submit"
     try:
         resp = requests.post(
             url,
