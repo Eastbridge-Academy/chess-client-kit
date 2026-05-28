@@ -14,9 +14,19 @@ from __future__ import annotations
 import random
 from typing import Callable
 
+from chessdk import search as _search_module
 from chessdk.evaluation import MATE_SCORE
 from chessdk.search import _decay_mate, search
 from chessdk.types import Move, WHITE
+
+
+# Module-level instrumentation populated by ``minimax_pick`` so the UCI
+# wrapper can emit standard ``info`` lines (nodes, nps, score, depth)
+# for house bot games. Mirrors the convention students use in their own
+# ``search.py`` for Stage 20 of the Phase 5 handout.
+nodes_visited: int = 0
+last_score: int | None = None
+last_depth: int | None = None
 
 
 def pick_best(
@@ -48,6 +58,19 @@ def pick_best(
     return rng.choice(best_moves)
 
 
+def _reset_counters() -> None:
+    global nodes_visited
+    nodes_visited = 0
+    _search_module.nodes_visited = 0
+
+
+def _publish_metrics(score: int | None, depth: int) -> None:
+    global nodes_visited, last_score, last_depth
+    nodes_visited = nodes_visited + _search_module.nodes_visited
+    last_score = score
+    last_depth = depth
+
+
 def minimax_pick(
     board,
     score_fn: Callable[[object], int],
@@ -69,6 +92,7 @@ def minimax_pick(
     captures only, which is how the ``tunnel_vision`` house bot expresses
     its tactical-but-positionally-blind personality.
     """
+    _reset_counters()
     is_max = board.side_to_move == WHITE
     best_score: int | None = None
     best_moves: list[Move] = []
@@ -99,6 +123,7 @@ def minimax_pick(
         elif child_score == best_score:
             best_moves.append(move)
 
+    _publish_metrics(best_score, depth)
     return rng.choice(best_moves)
 
 
@@ -109,6 +134,8 @@ def _capture_only_search(
     alpha: int = -MATE_SCORE,
     beta: int = MATE_SCORE,
 ) -> int:
+    global nodes_visited
+    nodes_visited += 1
     """Search that only considers captures (no quiet moves).
 
     Used by ``tunnel_vision``: a sharp tactical engine that simply does

@@ -30,6 +30,12 @@ from chessdk.types import Move, WHITE
 # real search.
 _MATE_BAND = 1000
 
+# Module-level node counter incremented at the top of every ``search`` call.
+# Used by the house bots' shared ``minimax_pick`` helper to report nodes
+# and nps to the UCI wrapper, mirroring the ``search.nodes_visited`` pattern
+# that the student-facing scaffold uses.
+nodes_visited: int = 0
+
 
 def _decay_mate(score: int) -> int:
     """Adjust a mate score by one ply on the way up the recursion.
@@ -71,6 +77,8 @@ def search(
     we've reached depth zero, so the evaluator never has to know about
     checkmate or stalemate.
     """
+    global nodes_visited
+    nodes_visited += 1
     legal = board.legal_moves()
 
     if not legal:

@@ -5,7 +5,7 @@ Student client kit for the Eastbridge Academy chess-bot project. Provides the `c
 Students install it with:
 
 ```bash
-uv tool install git+https://github.com/Eastbridge-Academy/chess-client-kit@v0.5.0
+uv tool install git+https://github.com/Eastbridge-Academy/chess-client-kit@v0.5.1
 ```
 
 and then, in their own working directory:
