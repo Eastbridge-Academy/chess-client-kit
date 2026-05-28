@@ -19,6 +19,7 @@ ignored; we don't run async search, so there is nothing to stop.
 
 from __future__ import annotations
 
+import argparse
 import sys
 import traceback
 from pathlib import Path
@@ -181,7 +182,78 @@ def run(
 
 
 def main() -> None:
-    run()
+    from chessdk.house import HOUSE_BOTS
+
+    parser = argparse.ArgumentParser(
+        prog="chess-bot-uci",
+        description=(
+            "Run a chess bot as a UCI engine on stdin/stdout. With no "
+            "arguments, loads board.py and bot.py from the current "
+            "working directory; with --house, runs a named built-in bot "
+            "against the reference Board (no working-directory files needed)."
+        ),
+    )
+    parser.add_argument(
+        "--house",
+        metavar="NAME",
+        default=None,
+        help=(
+            "Run a built-in house bot instead of loading from cwd. "
+            "Choices: " + ", ".join(sorted(HOUSE_BOTS)) + "."
+        ),
+    )
+    args = parser.parse_args()
+
+    if args.house is None:
+        run()
+        return
+
+    if args.house not in HOUSE_BOTS:
+        available = ", ".join(sorted(HOUSE_BOTS))
+        print(
+            f"chess-bot-uci: unknown house bot {args.house!r}; "
+            f"choose from {available}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    from chessdk.reference import Board
+
+    run(board_cls=Board, choose_move=HOUSE_BOTS[args.house])
+
+
+# -----------------------------------------------------------------------------
+# Per-house-bot console entry points.
+#
+# Each house bot is also installed as its own ``chess-bot-<name>`` executable
+# so that GUIs (cutechess-gui, Arena, Banksia, etc.) that expect a single
+# command path without arguments can point at one of these directly. The
+# function below builds one main() per bot and the pyproject.toml's
+# [project.scripts] section maps each name to its entry point.
+# -----------------------------------------------------------------------------
+
+
+def _make_house_main(bot_name: str):
+    def _main() -> None:
+        from chessdk.house import HOUSE_BOTS
+        from chessdk.reference import Board
+
+        run(board_cls=Board, choose_move=HOUSE_BOTS[bot_name])
+
+    _main.__name__ = f"main_{bot_name}"
+    _main.__qualname__ = _main.__name__
+    _main.__doc__ = f"UCI entry point for the {bot_name!r} house bot."
+    return _main
+
+
+main_materialist = _make_house_main("materialist")
+main_knightmare = _make_house_main("knightmare")
+main_edge_lord = _make_house_main("edge_lord")
+main_crusader = _make_house_main("crusader")
+main_hoarder = _make_house_main("hoarder")
+main_random_legal = _make_house_main("random_legal")
+main_always_captures = _make_house_main("always_captures")
+main_hangs_pieces = _make_house_main("hangs_pieces")
 
 
 if __name__ == "__main__":

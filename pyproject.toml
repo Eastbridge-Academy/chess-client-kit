@@ -1,6 +1,6 @@
 [project]
 name = "chess-client-kit"
-version = "0.3.1"
+version = "0.4.0"
 description = "Student client kit for the Eastbridge Academy chess bot project"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,6 +15,16 @@ dependencies = [
 [project.scripts]
 chess-cli = "chessdk.cli:main"
 chess-bot-uci = "chessdk.uci:main"
+# Per-house-bot UCI shims so GUIs that take a single command path (with no
+# argument field) can point at any of these directly.
+chess-bot-materialist = "chessdk.uci:main_materialist"
+chess-bot-knightmare = "chessdk.uci:main_knightmare"
+chess-bot-edge-lord = "chessdk.uci:main_edge_lord"
+chess-bot-crusader = "chessdk.uci:main_crusader"
+chess-bot-hoarder = "chessdk.uci:main_hoarder"
+chess-bot-random-legal = "chessdk.uci:main_random_legal"
+chess-bot-always-captures = "chessdk.uci:main_always_captures"
+chess-bot-hangs-pieces = "chessdk.uci:main_hangs_pieces"
 
 [build-system]
 requires = ["hatchling"]

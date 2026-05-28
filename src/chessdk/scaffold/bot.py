@@ -1,11 +1,12 @@
 """Your bot.
 
-`choose_move` is what the UCI loop calls every time it's your turn to play.
-It receives the current `Board` and the remaining clock time in milliseconds,
+``choose_move`` is what the UCI loop calls every time it's your turn to play.
+It receives the current ``Board`` and the remaining clock time in milliseconds,
 and must return one of the legal moves on the board.
 
-For Phases 1 and 2 this function is unused. Phase 3 wires it up and starts
-submitting your bot to the tournament.
+For Phases 1 and 2 this function is unused. Phase 3 wires it up and submits
+to the tournament; Phase 4 rebuilds it around an evaluation function (see
+``evaluation.py``); Phase 5 wraps that with a search.
 """
 
 from __future__ import annotations

@@ -53,6 +53,7 @@ def init(force: bool) -> None:
     targets = [
         ("board.py", scaffold_root / "board.py"),
         ("bot.py", scaffold_root / "bot.py"),
+        ("evaluation.py", scaffold_root / "evaluation.py"),
     ]
     for name, src in targets:
         dest = Path(name)
