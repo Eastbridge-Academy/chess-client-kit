@@ -5,8 +5,11 @@ It receives the current ``Board`` and the remaining clock time in milliseconds,
 and must return one of the legal moves on the board.
 
 For Phases 1 and 2 this function is unused. Phase 3 wires it up and submits
-to the tournament; Phase 4 rebuilds it around an evaluation function (see
-``evaluation.py``); Phase 5 wraps that with a search.
+to the tournament. Phase 4 rebuilds it around an evaluation function (see
+``evaluation.py``). Phase 5 wraps that evaluator in a search (see
+``search.py``) so the bot can look several plies ahead, which makes the
+hang-detection stopgap from Phase 4 redundant; this is the phase where
+you get to delete that code.
 """
 
 from __future__ import annotations

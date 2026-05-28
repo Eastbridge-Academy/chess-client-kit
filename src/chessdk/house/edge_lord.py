@@ -15,25 +15,17 @@ from __future__ import annotations
 
 import random
 
-from chessdk.evaluation import (
-    DEFAULT_PSTS,
-    MATE_SCORE,
-    PIECE_VALUE_CLASSIC,
-)
-from chessdk.house._common import pick_best
+from chessdk.evaluation import DEFAULT_PSTS, PIECE_VALUE_CLASSIC
+from chessdk.house._common import minimax_pick
 from chessdk.squares import file_of, rank_of, sq
 from chessdk.types import Move, WHITE
 
 
 _rng = random.Random()
+_DEPTH = 3
 
 
 def _score(board) -> int:
-    legal = board.legal_moves()
-    if not legal:
-        if board.is_in_check():
-            return -MATE_SCORE if board.side_to_move == WHITE else MATE_SCORE
-        return 0
     total = 0
     for s, piece in enumerate(board.pieces):
         if piece is None:
@@ -52,4 +44,4 @@ def _score(board) -> int:
 
 
 def choose_move(board, time_left_ms: int) -> Move:
-    return pick_best(board, _score, _rng)
+    return minimax_pick(board, _score, _DEPTH, _rng)

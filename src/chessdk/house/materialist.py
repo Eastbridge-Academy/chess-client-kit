@@ -1,33 +1,32 @@
-"""materialist: pure material counting at depth 1.
+"""materialist: pure material counting wrapped in alpha-beta search.
 
-The simplest "real" Phase 4 bot. Scores every legal move by the raw
-material balance of the resulting position, with no piece-square tables,
-no mobility, no king safety. Treats a knight on a8 the same as a knight
-on e4 — happily develops to terrible squares as long as material is even.
+Scores every legal move by the raw material balance of the position the
+search lands on, with no piece-square tables, no mobility, no king
+safety. Treats a knight on a8 the same as a knight on e4; on positional
+positions it drifts, on tactical positions it calculates.
 
-Any student bot with even a rudimentary piece-square table will beat
-Materialist consistently, because that is exactly the gap Materialist
-ignores.
+The personality has not changed since Phase 4 — only the search wrapping
+the eval has. In v0.4.0 Materialist ran at depth 1 (eval-and-pick) and
+hung pieces frequently. In v0.5.0 it runs alpha-beta at depth 3, sees
+captures and recaptures coming, and is a noticeably tougher opponent
+even though every centipawn it counts is the same centipawn it counted
+in v0.4.0.
 """
 
 from __future__ import annotations
 
 import random
 
-from chessdk.evaluation import MATE_SCORE, PIECE_VALUE_CLASSIC
-from chessdk.house._common import pick_best
+from chessdk.evaluation import PIECE_VALUE_CLASSIC
+from chessdk.house._common import minimax_pick
 from chessdk.types import Move, WHITE
 
 
 _rng = random.Random()
+_DEPTH = 3
 
 
 def _score(board) -> int:
-    legal = board.legal_moves()
-    if not legal:
-        if board.is_in_check():
-            return -MATE_SCORE if board.side_to_move == WHITE else MATE_SCORE
-        return 0
     total = 0
     for piece in board.pieces:
         if piece is None:
@@ -38,4 +37,4 @@ def _score(board) -> int:
 
 
 def choose_move(board, time_left_ms: int) -> Move:
-    return pick_best(board, _score, _rng)
+    return minimax_pick(board, _score, _DEPTH, _rng)

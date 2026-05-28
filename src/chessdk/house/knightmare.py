@@ -15,8 +15,7 @@ from __future__ import annotations
 
 import random
 
-from chessdk.evaluation import MATE_SCORE
-from chessdk.house._common import pick_best
+from chessdk.house._common import minimax_pick
 from chessdk.types import (
     BISHOP,
     KING,
@@ -31,6 +30,7 @@ from chessdk.types import (
 
 
 _rng = random.Random()
+_DEPTH = 3
 
 
 _KNIGHTMARE_VALUES: dict[Kind, int] = {
@@ -44,11 +44,6 @@ _KNIGHTMARE_VALUES: dict[Kind, int] = {
 
 
 def _score(board) -> int:
-    legal = board.legal_moves()
-    if not legal:
-        if board.is_in_check():
-            return -MATE_SCORE if board.side_to_move == WHITE else MATE_SCORE
-        return 0
     total = 0
     for piece in board.pieces:
         if piece is None:
@@ -59,4 +54,4 @@ def _score(board) -> int:
 
 
 def choose_move(board, time_left_ms: int) -> Move:
-    return pick_best(board, _score, _rng)
+    return minimax_pick(board, _score, _DEPTH, _rng)

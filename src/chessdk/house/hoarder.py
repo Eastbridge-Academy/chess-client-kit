@@ -16,12 +16,13 @@ from __future__ import annotations
 
 import random
 
-from chessdk.evaluation import MATE_SCORE, PIECE_VALUE_CLASSIC
-from chessdk.house._common import pick_best
+from chessdk.evaluation import PIECE_VALUE_CLASSIC
+from chessdk.house._common import minimax_pick
 from chessdk.types import BLACK, Move, WHITE
 
 
 _rng = random.Random()
+_DEPTH = 3
 
 
 _MATERIAL_MULTIPLIER = 1.5
@@ -38,12 +39,6 @@ def _count_legal_for(board, color) -> int:
 
 
 def _score(board) -> int:
-    legal = board.legal_moves()
-    if not legal:
-        if board.is_in_check():
-            return -MATE_SCORE if board.side_to_move == WHITE else MATE_SCORE
-        return 0
-
     total = 0
     for piece in board.pieces:
         if piece is None:
@@ -51,22 +46,21 @@ def _score(board) -> int:
         sign = 1 if piece.color == WHITE else -1
         total += sign * int(PIECE_VALUE_CLASSIC[piece.kind] * _MATERIAL_MULTIPLIER)
 
-    side_count = len(legal)
     other_color = BLACK if board.side_to_move == WHITE else WHITE
+    side_count = len(board.legal_moves())
     other_count = _count_legal_for(board, other_color)
     if board.side_to_move == WHITE:
         white_count, black_count = side_count, other_count
     else:
         white_count, black_count = other_count, side_count
 
-    # The penalty is symmetric so Hoarder dislikes mobility for both sides:
-    # White's score loses points when White has many moves, and gains points
-    # when Black has many moves (because that helps drag Black's score down
-    # by symmetry too — both sides being forced to make choices is what it
-    # is averse to).
+    # The penalty is symmetric so Hoarder dislikes mobility for both sides.
+    # With proper depth-3 search now in place, Hoarder can actually steer
+    # toward the closed positions it prefers, building pawn locks several
+    # moves out and refusing trades it would have walked into at depth 1.
     total -= _MOBILITY_PENALTY * (white_count - black_count)
     return total
 
 
 def choose_move(board, time_left_ms: int) -> Move:
-    return pick_best(board, _score, _rng)
+    return minimax_pick(board, _score, _DEPTH, _rng)
