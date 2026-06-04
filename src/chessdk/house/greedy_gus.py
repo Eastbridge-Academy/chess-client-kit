@@ -20,7 +20,7 @@ from __future__ import annotations
 import random
 
 from chessdk.evaluation import PIECE_VALUE_CLASSIC
-from chessdk.house._common import minimax_pick
+from chessdk.house._common import iterative_pick
 from chessdk.types import Move, WHITE
 
 
@@ -39,4 +39,4 @@ def _score(board) -> int:
 
 
 def choose_move(board, time_left_ms: int) -> Move:
-    return minimax_pick(board, _score, _DEPTH, _rng)
+    return iterative_pick(board, _score, _DEPTH, _rng, time_left_ms)

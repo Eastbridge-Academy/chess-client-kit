@@ -22,7 +22,7 @@ from chessdk.evaluation import (
     PIECE_VALUE_CLASSIC,
     pst_square,
 )
-from chessdk.house._common import minimax_pick
+from chessdk.house._common import iterative_pick
 from chessdk.squares import file_of, rank_of, sq
 from chessdk.types import BLACK, KING, Move, WHITE
 
@@ -98,4 +98,4 @@ def _score(board) -> int:
 
 
 def choose_move(board, time_left_ms: int) -> Move:
-    return minimax_pick(board, _score, _DEPTH, _rng)
+    return iterative_pick(board, _score, _DEPTH, _rng, time_left_ms)

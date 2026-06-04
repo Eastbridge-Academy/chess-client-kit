@@ -318,10 +318,15 @@ def _play_one_game(board_cls, white_fn, black_fn, time_ms: int, max_plies: int):
 @click.option("-n", "--games", default=1, show_default=True, type=int)
 @click.option(
     "--time-ms",
-    default=1000,
+    default=10000,
     show_default=True,
     type=int,
-    help="time_left_ms argument passed to choose_move on every call.",
+    help=(
+        "Clock (ms) passed as time_left_ms to choose_move on every call. "
+        "A time-managed bot spends a fraction of this per move, so larger "
+        "values give deeper, slower games and smaller ones quick blitz "
+        "checks. Bots that ignore time (Phases 4-5) are unaffected."
+    ),
 )
 @click.option(
     "--max-plies",

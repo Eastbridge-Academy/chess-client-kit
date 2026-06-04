@@ -134,8 +134,8 @@ def order_moves(board, moves: list[Move]) -> list[Move]:
     MVV-LVA: most valuable victim first, with the cheapest attacker
     breaking ties among captures of the same victim. This is the static
     ordering that makes alpha-beta's pruning effective; deeper ordering
-    refinements (killer moves, history heuristic, hash moves) come in
-    Phase 6.
+    refinements come in later phases (the transposition-table hash move in
+    Phase 7, killer moves and the history heuristic in Phase 8).
 
     The returned list is a new list; the input is not mutated.
     """
@@ -150,3 +150,82 @@ def order_moves(board, moves: list[Move]) -> list[Move]:
         return (PIECE_VALUE_CLASSIC[victim.kind], -attacker_value)
 
     return sorted(moves, key=_key, reverse=True)
+
+
+def quiesce(
+    board,
+    alpha: int,
+    beta: int,
+    eval_fn: Callable[[object], int],
+) -> int:
+    """Resolve the pending captures, then evaluate (quiescence search).
+
+    The static evaluator is reliable on quiet positions and unreliable in
+    the middle of a capture sequence, where it scores a hanging piece as
+    won material. Quiescence fixes this by continuing the search at a leaf
+    but only along captures, until no capture is worth making, and only
+    then handing the settled position to ``eval_fn``. This is what removes
+    the horizon effect (Phase 6, Stage 23).
+
+    The ``stand_pat`` score is the static evaluation of the current
+    position. The side to move is never forced to capture in a quiescence
+    node, so ``stand_pat`` is a floor on what the maximizing side can
+    secure (and a ceiling for the minimizing side): they deviate from it
+    only by playing a capture that does better. Captures are tried in
+    MVV-LVA order so the alpha-beta cutoffs fire as they do in the main
+    search. There is no depth limit, but the supply of captures is finite
+    and shrinking, so the recursion bottoms out quickly.
+
+    Returns a White-relative centipawn score. Like ``search``, terminal
+    positions are handled here, so ``eval_fn`` is only ever called on a
+    position that still has legal moves.
+    """
+    global nodes_visited
+    nodes_visited += 1
+
+    legal = board.legal_moves()
+    if not legal:
+        if board.is_in_check():
+            return -MATE_SCORE if board.side_to_move == WHITE else MATE_SCORE
+        return 0
+
+    stand_pat = eval_fn(board)
+    captures = order_moves(
+        board, [m for m in legal if board.piece_at(m.to_sq) is not None]
+    )
+
+    if board.side_to_move == WHITE:
+        if stand_pat >= beta:
+            return stand_pat
+        if stand_pat > alpha:
+            alpha = stand_pat
+        best = stand_pat
+        for move in captures:
+            board.make_move(move)
+            score = quiesce(board, alpha, beta, eval_fn)
+            board.undo_move()
+            if score > best:
+                best = score
+            if best > alpha:
+                alpha = best
+            if alpha >= beta:
+                break
+        return best
+
+    if stand_pat <= alpha:
+        return stand_pat
+    if stand_pat < beta:
+        beta = stand_pat
+    best = stand_pat
+    for move in captures:
+        board.make_move(move)
+        score = quiesce(board, alpha, beta, eval_fn)
+        board.undo_move()
+        if score < best:
+            best = score
+        if best < beta:
+            beta = best
+        if alpha >= beta:
+            break
+    return best
+

@@ -9,7 +9,9 @@ to the tournament. Phase 4 rebuilds it around an evaluation function (see
 ``evaluation.py``). Phase 5 wraps that evaluator in a search (see
 ``search.py``) so the bot can look several plies ahead, which makes the
 hang-detection stopgap from Phase 4 redundant; this is the phase where
-you get to delete that code.
+you get to delete that code. Phase 6 is where ``time_left_ms`` finally
+earns its place in the signature: ``choose_move`` budgets a slice of the
+clock and hands it to the iterative-deepening driver in ``search.py``.
 """
 
 from __future__ import annotations
