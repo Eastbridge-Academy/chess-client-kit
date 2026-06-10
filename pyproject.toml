@@ -1,6 +1,6 @@
 [project]
 name = "chess-client-kit"
-version = "0.3.3"
+version = "0.3.4"
 description = "Student client kit for the Eastbridge Academy chess bot project"
 readme = "README.md"
 requires-python = ">=3.11"
