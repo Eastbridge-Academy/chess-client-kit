@@ -149,3 +149,74 @@ def test_parse_go_time_uses_side_clock():
 
 def test_parse_go_time_default_when_missing():
     assert _parse_go_time("go infinite", WHITE) == 1000
+
+
+def test_position_replay_desync_is_fatal(capsys):
+    """A game move the board's legal_moves() rejects must kill the engine.
+
+    If the loop swallowed the error (pre-0.3.3 behavior), the board would
+    silently stay at the previous position and the bot would compute its
+    next move from a stale board -- surfacing later as a baffling illegal
+    move. Simulate a desync with a board whose legal_moves() wrongly omits
+    a real move.
+    """
+
+    class StrictBoard(Board):
+        def legal_moves(self):
+            return [m for m in super().legal_moves() if m.uci() != "e2e4"]
+
+    in_stream = io.StringIO("position startpos moves e2e4\ngo movetime 100\nquit\n")
+    out_stream = io.StringIO()
+    with pytest.raises(SystemExit) as excinfo:
+        run(
+            board_cls=StrictBoard,
+            choose_move=random_legal,
+            in_stream=in_stream,
+            out_stream=out_stream,
+        )
+    assert excinfo.value.code == 70
+    err = capsys.readouterr().err
+    assert "GAME STATE DESYNC" in err
+    assert "rejected the game move 'e2e4'" in err
+    assert "FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" in err
+    assert "your legal_moves():" in err
+    # No bestmove must have been emitted from the stale board.
+    assert "bestmove" not in out_stream.getvalue()
+
+
+def test_position_replay_failure_of_make_move_is_fatal(capsys):
+    """Any other failure while applying `position` must also stop the engine."""
+
+    class ExplodingBoard(Board):
+        def make_move(self, move):
+            raise RuntimeError("boom in make_move")
+
+    in_stream = io.StringIO("position startpos moves e2e4\nquit\n")
+    with pytest.raises(SystemExit) as excinfo:
+        run(
+            board_cls=ExplodingBoard,
+            choose_move=random_legal,
+            in_stream=in_stream,
+            out_stream=io.StringIO(),
+        )
+    assert excinfo.value.code == 70
+    err = capsys.readouterr().err
+    assert "boom in make_move" in err
+    assert "stale" in err
+
+
+def test_go_crash_still_keeps_loop_alive():
+    """`go`-time crashes keep the previous (still correct) board and loop."""
+
+    def crashing(board, time_left_ms):
+        raise RuntimeError("boom")
+
+    in_stream = io.StringIO("position startpos\ngo movetime 100\nuci\nquit\n")
+    out_stream = io.StringIO()
+    run(
+        board_cls=Board,
+        choose_move=crashing,
+        in_stream=in_stream,
+        out_stream=out_stream,
+    )
+    assert "uciok" in out_stream.getvalue()
