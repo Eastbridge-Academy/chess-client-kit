@@ -34,6 +34,50 @@ DEFAULT_TIME_MS = 1000
 
 _PROMO_CHARS = {"n": KNIGHT, "b": BISHOP, "r": ROOK, "q": QUEEN}
 
+# Stable marker for the fatal desync banner. The arena's match worker greps
+# the engine's captured stderr for this string to classify the failure, so
+# changing it requires a matching change in arena_worker/games/chess/engine.py.
+DESYNC_MARKER = "GAME STATE DESYNC"
+
+
+class GameDesyncError(Exception):
+    """The game contains a move the student's board says is illegal.
+
+    Raised during ``position`` replay when an actually-played game move
+    cannot be resolved against the student board's ``legal_moves()``. That
+    means the student's move generation disagrees with the real game: if we
+    carried on, the board would silently stay at a stale position and every
+    later ``go`` would compute a move for the wrong position (typically
+    surfacing as a baffling "illegal move" loss several plies later).
+    """
+
+
+def _desync_report(board, uci: str, ply: int) -> str:
+    """Build the student-facing explanation for a position-replay desync."""
+    try:
+        fen = board.to_fen()
+    except Exception:  # noqa: BLE001 - a buggy board must not mask the report
+        fen = "<your board's to_fen() raised an exception>"
+    try:
+        legal = " ".join(sorted(m.uci() for m in board.legal_moves()))
+    except Exception:  # noqa: BLE001
+        legal = "<your board's legal_moves() raised an exception>"
+    return (
+        f"Your board rejected the game move '{uci}' (ply {ply} of this game).\n"
+        "That move was actually played in the game, so it is legal -- but your\n"
+        "board's legal_moves() does not include it. Your move generation has\n"
+        "diverged from the real game; continuing would mean playing from a\n"
+        "stale, incorrect position, so the engine is stopping here instead.\n"
+        "\n"
+        "Position right before the rejected move (as your board sees it):\n"
+        f"  FEN: {fen}\n"
+        f"  your legal_moves(): {legal}\n"
+        "\n"
+        f"Debug tip: load this FEN into your Board and work out why '{uci}' is\n"
+        "missing from legal_moves(). A common cause is an is_attacked() /\n"
+        "check-detection bug that wrongly excludes a legal move."
+    )
+
 
 def parse_move(uci: str, legal_moves: list[Move]) -> Move:
     """Resolve a UCI move string against a list of legal moves.
@@ -81,8 +125,11 @@ def _apply_position(line: str, board_cls: type):
 
     if i < len(tokens) and tokens[i] == "moves":
         i += 1
-        for uci in tokens[i:]:
-            move = parse_move(uci, board.legal_moves())
+        for ply, uci in enumerate(tokens[i:], start=1):
+            try:
+                move = parse_move(uci, board.legal_moves())
+            except ValueError as exc:
+                raise GameDesyncError(_desync_report(board, uci, ply)) from exc
             board.make_move(move)
     return board
 
@@ -164,7 +211,30 @@ def run(
             elif line == "ucinewgame":
                 board = board_cls.from_fen(STARTING_FEN)
             elif line.startswith("position"):
-                board = _apply_position(line, board_cls)
+                # A failed `position` is fatal. If we swallowed the error and
+                # carried on (as `go` errors are), `board` would silently stay
+                # at the *previous* position and every later move would be
+                # computed from a stale board -- which the tournament server
+                # then flags as an illegal move with no hint of the real cause.
+                try:
+                    board = _apply_position(line, board_cls)
+                except GameDesyncError as exc:
+                    banner = f"========== {DESYNC_MARKER} -- ENGINE STOPPING =========="
+                    print(banner, file=sys.stderr)
+                    print(str(exc), file=sys.stderr)
+                    print("=" * len(banner), file=sys.stderr)
+                    sys.stderr.flush()
+                    raise SystemExit(70) from exc
+                except Exception:
+                    traceback.print_exc(file=sys.stderr)
+                    print(
+                        "fatal: applying the 'position' command failed (see above); "
+                        "continuing would leave the engine playing from a stale "
+                        "board, so it is stopping here.",
+                        file=sys.stderr,
+                    )
+                    sys.stderr.flush()
+                    raise SystemExit(70) from None
             elif line.startswith("go"):
                 time_left_ms = _parse_go_time(line, board.side_to_move)
                 move = choose_move(board, time_left_ms)
