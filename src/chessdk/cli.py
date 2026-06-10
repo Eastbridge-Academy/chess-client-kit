@@ -13,6 +13,7 @@ Subcommands:
 
 from __future__ import annotations
 
+import ast
 import json
 import subprocess
 import sys
@@ -23,6 +24,49 @@ import click
 
 
 CONFIG_FILE = ".chess-cli.json"
+
+
+def collect_local_modules(root: Path, entry_files: list[Path]) -> dict[str, str]:
+    """Map every local module the bot (transitively) imports to its source.
+
+    Walks the import statements of ``entry_files`` (normally bot.py and
+    board.py) and, for each imported name that corresponds to a ``<name>.py``
+    file in ``root``, bundles that file and recurses into it. This is how
+    ``submit`` knows to upload ``evaluation.py``, ``search.py``, or any other
+    helper module a student splits out -- while ignoring unrelated files in
+    the directory (tests, scratch scripts, and so on). The entry files
+    themselves are never included; they are uploaded separately.
+    """
+    entry_names = {path.stem for path in entry_files}
+    extras: dict[str, str] = {}
+    pending = list(entry_files)
+    seen: set[str] = set(entry_names)
+    while pending:
+        source_path = pending.pop()
+        try:
+            tree = ast.parse(source_path.read_text())
+        except (SyntaxError, OSError):
+            # An unparsable entry file will fail on the server with its own
+            # clear error; bundling is best-effort.
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                names = [node.module]
+            else:
+                continue
+            for dotted in names:
+                top = dotted.split(".")[0]
+                if top in seen:
+                    continue
+                candidate = root / f"{top}.py"
+                if not candidate.is_file():
+                    continue
+                seen.add(top)
+                extras[f"{top}.py"] = candidate.read_text()
+                pending.append(candidate)
+    return extras
 
 
 def load_config() -> dict:
@@ -443,8 +487,9 @@ def submit(team_name: str, email: str | None, bot_file: str, board_file: str) ->
     """Upload your bot to the tournament server.
 
     Reads `api_url` and `token` from `.chess-cli.json` in the current
-    directory. Both files (`bot.py` and `board.py`) are sent so the server
-    can run your bot end-to-end.
+    directory. Sends `bot.py`, `board.py`, and every local module they
+    (transitively) import -- e.g. `evaluation.py` and `search.py` -- so the
+    server can run your bot end-to-end exactly as it runs on your machine.
     """
     import requests
 
@@ -473,6 +518,11 @@ def submit(team_name: str, email: str | None, bot_file: str, board_file: str) ->
         "bot_py": bot_path.read_text(),
         "board_py": board_path.read_text(),
     }
+    extra_files = collect_local_modules(Path.cwd(), [bot_path, board_path])
+    if extra_files:
+        payload["extra_files"] = extra_files
+    bundled = ", ".join([bot_path.name, board_path.name, *sorted(extra_files)])
+    click.echo(f"bundling: {bundled}")
 
     league = cfg.get("league", "chess")
     url = api_url.rstrip("/") + f"/api/v1/leagues/{league}/bots/submit"
