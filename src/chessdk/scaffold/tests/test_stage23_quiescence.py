@@ -38,11 +38,13 @@ HORIZON = "4k3/8/1p6/p7/8/8/8/R3K3 w - - 0 1"
 FREE_PAWN = "7k/3p4/8/8/8/8/8/3QK3 w - - 0 1"
 
 # A six-ply forced exchange on e5 (the handout's worked example): White's
-# d4 pawn, Nf3 and Re1 contest the e5 pawn that Black's d6 pawn, Nc6 and Bg7
-# defend. After 1.dxe5 dxe5 2.Nxe5 Nxe5 3.Rxe5 Bxe5 the material swings
-# +1, 0, +1, -2, +1, -4: every odd ply reads "White up a pawn", so a search
-# that stops mid-chain (any odd depth) is fooled until the captures resolve.
-DEEP_EXCHANGE = "3qr1k1/ppp2pbp/2np4/4p3/3P4/5N2/PPPQ1PPP/2B1R1K1 w - - 0 1"
+# d4 pawn, Nf3 and Re1 contest the e5 pawn, which Black's d6 pawn, Nc6, Bg7
+# and Re8 defend. If both sides keep capturing (1.dxe5 dxe5 2.Nxe5 Nxe5
+# 3.Rxe5 Bxe5) the material swings +1, 0, +1, -2, +1, -4: every odd ply
+# reads "White up a pawn" and every even ply reads level, so a fixed-depth
+# search oscillates as it deepens and never settles until the captures
+# resolve.
+DEEP_EXCHANGE = "4r1k1/ppp2pbp/2np4/4p3/3P4/5N2/PPP2PPP/2B1R1K1 w - - 0 1"
 
 
 def test_quiescence_in_quiet_position_equals_static():
@@ -90,18 +92,20 @@ def test_search_declines_poisoned_capture():
 
 
 def test_quiescence_resolves_deep_exchange():
-    """A six-ply forced exchange: a depth-3 search stops mid-chain and reads
-    White up material; quiescence plays the captures out and sees it is level."""
+    """A six-ply forced exchange: a depth-3 search stops mid-chain (just
+    after 2.Nxe5) and reads White up a pawn; quiescence plays the captures
+    out and sees the exchange is level."""
     def quiescent_eval(b):
         return quiesce(b, -MATE_SCORE, MATE_SCORE, _material)
 
     plain, _ = search(Board.from_fen(DEEP_EXCHANGE), 3, _material)
     quiesced, _ = search(Board.from_fen(DEEP_EXCHANGE), 3, quiescent_eval)
-    assert plain >= 200, (
-        f"a plain depth-3 search should overvalue this mid-exchange (it stops "
-        f"after 2.Nxe5, a pawn or two up); got {plain}"
+    assert plain == 100, (
+        f"a plain depth-3 search halts just after 2.Nxe5 and should read "
+        f"exactly a pawn up (+100); got {plain}"
     )
-    assert quiesced <= 100, (
-        f"quiescence should resolve the exchange to roughly level; got {quiesced}"
+    assert quiesced == 0, (
+        f"with a quiescent leaf the same search resolves the exchange to "
+        f"level (0); got {quiesced}"
     )
     assert quiesced < plain
