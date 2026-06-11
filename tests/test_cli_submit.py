@@ -54,3 +54,19 @@ def test_unparsable_entry_is_skipped(tmp_path: Path) -> None:
     extras = collect_local_modules(tmp_path, [bot, board])
 
     assert set(extras) == {"evaluation.py"}
+
+
+def test_vendored_chessdk_files_cover_the_runtime(tmp_path: Path) -> None:
+    """Submissions carry the student's own chessdk so the arena runs the
+    exact kit version the bot was tested against."""
+    from chessdk.cli import vendored_chessdk_files
+
+    files = vendored_chessdk_files()
+
+    assert "chessdk/uci.py" in files
+    assert "chessdk/base.py" in files
+    assert "chessdk/reference.py" in files
+    assert all(not name.endswith(".pyc") for name in files)
+    assert all("__pycache__" not in name for name in files)
+    # Sanity: the vendored wrapper is the one we are running.
+    assert "GAME STATE DESYNC" in files["chessdk/uci.py"]

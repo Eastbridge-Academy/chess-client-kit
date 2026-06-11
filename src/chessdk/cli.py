@@ -26,6 +26,28 @@ import click
 CONFIG_FILE = ".chess-cli.json"
 
 
+def vendored_chessdk_files() -> dict[str, str]:
+    """Map archive paths (chessdk/...) to the installed kit's own sources.
+
+    Submissions bundle the exact chessdk the student developed against, so
+    the arena runs each bot on the kit version it was tested with -- the
+    server never imposes its own kit on student code. ``python -m
+    chessdk.uci`` runs with the archive as cwd, which Python puts first on
+    sys.path, so the vendored package shadows whatever the worker has
+    installed.
+    """
+    import chessdk
+
+    package_root = Path(chessdk.__file__).parent
+    files: dict[str, str] = {}
+    for path in sorted(package_root.rglob("*.py")):
+        relative = path.relative_to(package_root)
+        if "__pycache__" in relative.parts:
+            continue
+        files[f"chessdk/{relative.as_posix()}"] = path.read_text()
+    return files
+
+
 def collect_local_modules(root: Path, entry_files: list[Path]) -> dict[str, str]:
     """Map every local module the bot (transitively) imports to its source.
 
@@ -524,10 +546,17 @@ def submit(team_name: str, email: str | None, bot_file: str, board_file: str) ->
         "board_py": board_path.read_text(),
     }
     extra_files = collect_local_modules(Path.cwd(), [bot_path, board_path])
-    if extra_files:
-        payload["extra_files"] = extra_files
     bundled = ", ".join([bot_path.name, board_path.name, *sorted(extra_files)])
-    click.echo(f"bundling: {bundled}")
+    vendored = vendored_chessdk_files()
+    extra_files.update(vendored)
+    payload["extra_files"] = extra_files
+    try:
+        from importlib.metadata import version as _dist_version
+
+        kit_version = _dist_version("chess-client-kit")
+    except Exception:
+        kit_version = "unknown"
+    click.echo(f"bundling: {bundled} + chessdk {kit_version} ({len(vendored)} files)")
 
     league = cfg.get("league", "chess")
     url = api_url.rstrip("/") + f"/api/v1/leagues/{league}/bots/submit"
