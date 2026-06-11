@@ -11,6 +11,9 @@ Using a material-only evaluator (so only the search is under test), we check:
     gain.
   - A depth-one search given a quiescent leaf evaluator declines the
     poisoned capture instead of walking into it.
+  - On a six-ply forced exchange (the handout's worked example), a plain
+    depth-3 search halts mid-chain a pawn up while the same search with a
+    quiescent leaf resolves the exchange to level.
 """
 
 from __future__ import annotations
