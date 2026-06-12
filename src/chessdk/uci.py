@@ -38,6 +38,9 @@ _PROMO_CHARS = {"n": KNIGHT, "b": BISHOP, "r": ROOK, "q": QUEEN}
 # the engine's captured stderr for this string to classify the failure, so
 # changing it requires a matching change in arena_worker/games/chess/engine.py.
 DESYNC_MARKER = "GAME STATE DESYNC"
+# Stable marker for the fatal crash banner printed when choose_move fails to
+# produce a move for a `go` command.
+CRASH_MARKER = "FATAL BOT CRASH"
 
 
 class GameDesyncError(Exception):
@@ -236,17 +239,38 @@ def run(
                     sys.stderr.flush()
                     raise SystemExit(70) from None
             elif line.startswith("go"):
-                time_left_ms = _parse_go_time(line, board.side_to_move)
-                move = choose_move(board, time_left_ms)
-                emit(f"bestmove {move.uci()}")
+                # `go` owes the GUI/tournament a bestmove. Any failure to
+                # produce one (a crash in choose_move, a None return, a bad
+                # move object) is fatal: an engine that stays alive but never
+                # answers looks identical to one that is thinking, so under a
+                # clock the silence costs the whole game before anyone notices.
+                try:
+                    time_left_ms = _parse_go_time(line, board.side_to_move)
+                    move = choose_move(board, time_left_ms)
+                    emit(f"bestmove {move.uci()}")
+                except Exception as exc:
+                    banner = f"========== {CRASH_MARKER} -- ENGINE STOPPING =========="
+                    print(banner, file=sys.stderr)
+                    traceback.print_exc(file=sys.stderr)
+                    print(
+                        "Your bot failed to produce a move for `go` (the error is "
+                        "above; a `None` return counts as no move). The engine "
+                        "cannot answer, so it is stopping here -- in a tournament "
+                        "this forfeits the game. Fix the crash and try again.",
+                        file=sys.stderr,
+                    )
+                    print("=" * len(banner), file=sys.stderr)
+                    sys.stderr.flush()
+                    raise SystemExit(71) from exc
             elif line == "quit":
                 return
             elif line == "stop":
                 pass  # we don't run async search
             # Silently ignore unknown commands (UCI convention).
         except Exception:
-            # A crash inside the student's code shouldn't kill the loop;
-            # surface the trace on stderr (visible in the GUI's engine log).
+            # Only commands that owe the GUI no reply can reach here
+            # (`position` and `go` failures are fatal above); surface the
+            # trace on stderr and keep serving the session.
             traceback.print_exc(file=sys.stderr)
             sys.stderr.flush()
 
