@@ -91,22 +91,32 @@ def test_quit_terminates_loop_immediately():
     assert "uciok" not in out
 
 
-def test_bot_exception_does_not_crash_loop():
+def test_bot_exception_during_go_is_fatal(capsys):
+    """A crash in choose_move must stop the engine, not leave it silent.
+
+    The loop used to swallow this and keep serving commands without ever
+    answering the pending `go`; under a tournament clock that silence burned
+    the bot's whole game. The engine now dies loudly with the traceback.
+    """
+
     def crashing(board, time_left_ms):
         raise RuntimeError("boom")
 
-    out = drive(
-        [
-            "position startpos",
-            "go movetime 100",
-            "uci",
-            "quit",
-        ],
-        crashing,
-    )
-    # The bot crashed, so no bestmove for the first go, but the loop
-    # survived and processed the subsequent `uci`.
-    assert "uciok" in out
+    in_stream = io.StringIO("position startpos\ngo movetime 100\nuci\nquit\n")
+    out_stream = io.StringIO()
+    with pytest.raises(SystemExit) as excinfo:
+        run(
+            board_cls=Board,
+            choose_move=crashing,
+            in_stream=in_stream,
+            out_stream=out_stream,
+        )
+    assert excinfo.value.code == 71
+    err = capsys.readouterr().err
+    assert "FATAL BOT CRASH" in err
+    assert "boom" in err
+    assert "forfeits the game" in err
+    assert "bestmove" not in out_stream.getvalue()
 
 
 def test_apply_position_startpos():
@@ -205,18 +215,21 @@ def test_position_replay_failure_of_make_move_is_fatal(capsys):
     assert "stale" in err
 
 
-def test_go_crash_still_keeps_loop_alive():
-    """`go`-time crashes keep the previous (still correct) board and loop."""
+def test_returning_none_from_choose_move_is_fatal(capsys):
+    """`None` is not a move: the engine cannot answer `go` and must stop."""
 
-    def crashing(board, time_left_ms):
-        raise RuntimeError("boom")
+    def returns_none(board, time_left_ms):
+        return None
 
-    in_stream = io.StringIO("position startpos\ngo movetime 100\nuci\nquit\n")
-    out_stream = io.StringIO()
-    run(
-        board_cls=Board,
-        choose_move=crashing,
-        in_stream=in_stream,
-        out_stream=out_stream,
-    )
-    assert "uciok" in out_stream.getvalue()
+    in_stream = io.StringIO("position startpos\ngo movetime 100\nquit\n")
+    with pytest.raises(SystemExit) as excinfo:
+        run(
+            board_cls=Board,
+            choose_move=returns_none,
+            in_stream=in_stream,
+            out_stream=io.StringIO(),
+        )
+    assert excinfo.value.code == 71
+    err = capsys.readouterr().err
+    assert "FATAL BOT CRASH" in err
+    assert "None" in err
