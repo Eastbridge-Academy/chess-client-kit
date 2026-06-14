@@ -49,7 +49,7 @@ from evaluation import evaluate
         ),
         # White missing knight and bishop: black up ~600 cp
         (
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R2QK2R w KQkq - 0 1",
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1",
             "black up two minor pieces",
             -1100, -400,
         ),
