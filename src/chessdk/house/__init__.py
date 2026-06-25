@@ -13,6 +13,8 @@ Phase 4 bots: ``materialist``, ``knightmare``, ``edge_lord``, ``crusader``,
 since v0.4.0; only the search depth scales with the kit version. See
 ``courses/projects/chess-bot/CLAUDE.md`` for the rule.)
 Phase 5 bots: ``magnus_mini``, ``tunnel_vision``, ``greedy_gus``.
+Phase 7 bots: ``magnus_maximus`` (the final boss: tapered eval, transposition
+table, killer/history ordering, deep iterative deepening).
 """
 
 from __future__ import annotations
@@ -24,6 +26,7 @@ from chessdk.house.greedy_gus import choose_move as greedy_gus
 from chessdk.house.hangs_pieces import choose_move as hangs_pieces
 from chessdk.house.hoarder import choose_move as hoarder
 from chessdk.house.knightmare import choose_move as knightmare
+from chessdk.house.magnus_maximus import choose_move as magnus_maximus
 from chessdk.house.magnus_mini import choose_move as magnus_mini
 from chessdk.house.materialist import choose_move as materialist
 from chessdk.house.random_legal import choose_move as random_legal
@@ -42,6 +45,7 @@ HOUSE_BOTS = {
     "magnus_mini": magnus_mini,
     "tunnel_vision": tunnel_vision,
     "greedy_gus": greedy_gus,
+    "magnus_maximus": magnus_maximus,
 }
 
 
@@ -54,6 +58,7 @@ __all__ = [
     "hangs_pieces",
     "hoarder",
     "knightmare",
+    "magnus_maximus",
     "magnus_mini",
     "materialist",
     "random_legal",

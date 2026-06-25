@@ -79,3 +79,22 @@ def quiesce(
     scorer (Phase 6, Stage 23).
     """
     raise NotImplementedError("quiesce: implement in Phase 6 (Stage 23)")
+
+
+def search_tt(
+    board: Board,
+    depth: int,
+    eval_fn: Callable[[Board], int],
+    tt: dict,
+    alpha: int = -MATE_SCORE,
+    beta: int = MATE_SCORE,
+) -> tuple[int, Move | None]:
+    """Alpha-beta search with a transposition table (Phase 7, Stages 27-28).
+
+    The same shape as ``search``, plus ``tt``: a dictionary mapping a
+    position's ``board.zobrist_hash()`` to ``(depth, flag, score, best_move)``.
+    Probe it on entry (trust a deep-enough entry's score according to its bound
+    flag, and try its stored best move first), and store what you found on
+    exit. It must return the same score as plain ``search`` at the same depth.
+    """
+    raise NotImplementedError("search_tt: implement in Phase 7 (Stages 27-28)")

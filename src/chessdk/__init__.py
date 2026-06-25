@@ -47,6 +47,23 @@ from chessdk.evaluation import (
     min_attacker_value,
     pst_square,
 )
+from chessdk.zobrist import (
+    CASTLE_KEYS,
+    EP_FILE_KEYS,
+    PIECE_KEYS,
+    SIDE_KEY,
+    zobrist_hash,
+)
+from chessdk.tapered import (
+    EG_PST,
+    EG_VALUE,
+    MG_PST,
+    MG_VALUE,
+    PHASE_MAX,
+    game_phase,
+    tapered_eval,
+    tapered_pst,
+)
 
 __all__ = [
     "BISHOP",
@@ -91,4 +108,17 @@ __all__ = [
     "rank_of",
     "sq",
     "square_name",
+    "CASTLE_KEYS",
+    "EP_FILE_KEYS",
+    "PIECE_KEYS",
+    "SIDE_KEY",
+    "zobrist_hash",
+    "EG_PST",
+    "EG_VALUE",
+    "MG_PST",
+    "MG_VALUE",
+    "PHASE_MAX",
+    "game_phase",
+    "tapered_eval",
+    "tapered_pst",
 ]

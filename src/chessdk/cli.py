@@ -9,12 +9,14 @@ Subcommands:
   info       Show current config and environment info.
   play       Play one or more games against a built-in house bot.
   submit     Upload your bot to the tournament server.
+  lichess    Run your bot on lichess.org (needs a BOT-account token).
 """
 
 from __future__ import annotations
 
 import ast
 import json
+import os
 import subprocess
 import sys
 from importlib import resources
@@ -587,6 +589,118 @@ def submit(team_name: str, email: str | None, bot_file: str, board_file: str) ->
     except ValueError:
         if resp.text.strip():
             click.echo(resp.text.strip())
+
+
+# -----------------------------------------------------------------------------
+# lichess
+# -----------------------------------------------------------------------------
+
+def _resolve_lichess_token(flag_token: str | None) -> str | None:
+    """Find a lichess bot token: --token, then $LICHESS_BOT_TOKEN, then a
+    LICHESS_BOT_TOKEN line in a local .env file, then config ``lichess_token``.
+    """
+    if flag_token:
+        return flag_token
+    if os.environ.get("LICHESS_BOT_TOKEN"):
+        return os.environ["LICHESS_BOT_TOKEN"]
+    env_path = Path(".env")
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line.startswith("LICHESS_BOT_TOKEN="):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return load_config().get("lichess_token")
+
+
+@main.command()
+@click.option("--token", default=None, help="Bot token (else $LICHESS_BOT_TOKEN, a .env file, or config lichess_token).")
+@click.option("--house", default=None, help="Run a built-in house bot instead of your bot.py/board.py.")
+@click.option(
+    "--challenge-ai",
+    "challenge_ai_level",
+    default=None,
+    type=int,
+    help="Play a casual game vs Lichess Stockfish at this level (1-8) instead of waiting for challenges.",
+)
+@click.option("--clock-limit", default=180, show_default=True, type=int, help="Initial clock seconds (with --challenge-ai).")
+@click.option("--clock-increment", default=2, show_default=True, type=int, help="Increment seconds (with --challenge-ai).")
+@click.option("--accept-from", default=None, help="Only accept incoming challenges from this Lichess username.")
+@click.option("--upgrade", is_flag=True, help="One-time: turn this account into a BOT account (permanent, irreversible).")
+def lichess(
+    token: str | None,
+    house: str | None,
+    challenge_ai_level: int | None,
+    clock_limit: int,
+    clock_increment: int,
+    accept_from: str | None,
+    upgrade: bool,
+) -> None:
+    """Run your bot on lichess.org (needs a BOT-account token).
+
+    With --challenge-ai N your bot plays Lichess's Stockfish at level N; with no
+    flag it waits for and accepts incoming challenges. By default it runs your
+    bot.py/board.py from the current directory; --house runs a built-in bot.
+    """
+    from chessdk import lichess as lichess_mod
+
+    tok = _resolve_lichess_token(token)
+    if not tok:
+        raise click.ClickException(
+            "No lichess token found. Pass --token, set $LICHESS_BOT_TOKEN, add a "
+            "LICHESS_BOT_TOKEN=... line to a .env file, or run "
+            "`chess-cli config set lichess_token <token>`."
+        )
+
+    if upgrade:
+        client = lichess_mod.LichessClient(tok)
+        try:
+            me = client.account()
+        except lichess_mod.LichessError as e:
+            raise click.ClickException(str(e))
+        if me.get("title") == "BOT":
+            click.echo(f"{me['username']} is already a BOT account.")
+            return
+        if me.get("count", {}).get("all", 0) > 0:
+            raise click.ClickException(
+                f"{me['username']} has already played games; a BOT account must be brand "
+                "new. Make a fresh account for your bot and upgrade that one."
+            )
+        click.confirm(
+            f"Permanently turn {me['username']!r} into a BOT account? This cannot be undone.",
+            abort=True,
+        )
+        client.upgrade_to_bot()
+        click.echo(click.style(f"{me['username']} is now a BOT account.", fg="green"))
+        return
+
+    if house:
+        from chessdk.house import HOUSE_BOTS
+        from chessdk.reference import Board
+
+        if house not in HOUSE_BOTS:
+            raise click.ClickException(
+                f"unknown house bot {house!r}; choose from {', '.join(sorted(HOUSE_BOTS))}"
+            )
+        board_cls, choose = Board, HOUSE_BOTS[house]
+    else:
+        board_cls = _import_student_board()
+        choose = _import_student_choose_move()
+
+    try:
+        lichess_mod.play_on_lichess(
+            tok,
+            board_cls,
+            choose,
+            challenge_ai_level=challenge_ai_level,
+            clock_limit=clock_limit,
+            clock_increment=clock_increment,
+            accept_from=accept_from,
+            echo=click.echo,
+        )
+    except lichess_mod.LichessError as e:
+        raise click.ClickException(str(e))
+    except KeyboardInterrupt:
+        click.echo("\nstopped.")
 
 
 if __name__ == "__main__":

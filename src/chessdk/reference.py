@@ -66,6 +66,12 @@ class Board(BaseBoard):
             if piece is not None and piece.color == color:
                 yield s, piece
 
+    def zobrist_hash(self) -> int:
+        """Zobrist hash of this position (see ``chessdk.zobrist``)."""
+        from chessdk.zobrist import zobrist_hash
+
+        return zobrist_hash(self)
+
     # === Stage 2: Leapers ===
 
     def _knight_moves(self, color: Color) -> list[Move]:

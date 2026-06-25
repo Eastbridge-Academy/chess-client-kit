@@ -132,3 +132,15 @@ class Board(BaseBoard):
     def legal_moves(self) -> list[Move]:
         """Pseudo-legal moves filtered to those that don't leave own king in check."""
         raise NotImplementedError("implement Stage 6 (Attacks and Legality)")
+
+    # === Phase 7: Zobrist Hashing ===
+
+    def zobrist_hash(self) -> int:
+        """A 64-bit Zobrist hash naming this position (Phase 7, Stage 26).
+
+        XOR together the kit's keys for every feature present: one per
+        (piece, square) from PIECE_KEYS, SIDE_KEY when it is Black to move, a
+        CASTLE_KEYS entry per castling right, and the EP_FILE_KEYS entry for
+        the en-passant file when one is set. Import the keys from chessdk.
+        """
+        raise NotImplementedError("implement Phase 7 (Stage 26: Zobrist Hashing)")
